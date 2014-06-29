@@ -441,13 +441,14 @@ static void handle_setup(rtsp_conn_info *conn,
 
     player_play(&conn->stream);
 
-    char *resphdr = malloc(strlen(hdr) + 20);
+    char *resphdr = malloc(strlen(hdr) + 30);
     sprintf(resphdr, "%s;server_port=%d;control_port=%d;timing_port=%d", "RTP/AVP/UDP;unicast;interleaved=0-1;mode=record", sport, cport, tport);
     msg_add_header(resp, "Transport", resphdr);
 
     msg_add_header(resp, "Session", "1");
 
     resp->respcode = 200;
+    free(resphdr);
 }
 
 static void handle_record(rtsp_conn_info *conn,
