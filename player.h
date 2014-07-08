@@ -1,6 +1,7 @@
 #ifndef _PLAYER_H
 #define _PLAYER_H
 
+#include <limits.h>
 #include "audio.h"
 #include "metadata.h"
 

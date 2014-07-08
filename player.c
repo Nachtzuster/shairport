@@ -400,7 +400,25 @@ static int stuff_buffer(double playback_rate, short *inptr, short *outptr) {
 
     if (rand() < p_stuff * RAND_MAX) {
         stuff = playback_rate > 1.0 ? -1 : 1;
-        stuffsamp = rand() % (frame_size - 1);
+        long samp_amp, min_amp;
+        min_amp = INT_MAX;
+        for (i=2; i < ((frame_size - 1) * 2); i=i+2) {
+        	// sample on a flat
+        	samp_amp = labs((long)inptr[i-2] - (long)inptr[i]) + labs((long)inptr[i-1] - (long)inptr[i+1]);
+
+        	// sample close to zero
+        	//samp_amp = (long)abs(inptr[i-2]) + (long)abs(inptr[i]) + (long)abs(inptr[i-1]) + (long)abs(inptr[i+1]);
+
+        	//debug(1, "i %d, samp_amp %d\n", i, samp_amp);
+        	if (samp_amp < min_amp) {
+        		min_amp = samp_amp;
+        		stuffsamp = i;
+        		//debug(1, "i %d (%d), samp_amp %d\n", i, i/2, samp_amp);
+        	}
+        }
+        stuffsamp = stuffsamp / 2;
+        //sample chosen at random
+        //stuffsamp = rand() % (frame_size - 1);
     }
 
     pthread_mutex_lock(&vol_mutex);
