@@ -475,7 +475,8 @@ static void *player_thread_func(void *arg) {
         inbuf = buffer_get_frame();
         if (!inbuf)
             inbuf = silence;
-
+        bf_playback_rate = 1.001;
+        //bf_playback_rate = 0.999;
 #ifdef FANCY_RESAMPLING
         if (fancy_resampling) {
             int i;
