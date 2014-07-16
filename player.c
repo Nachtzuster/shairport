@@ -38,7 +38,6 @@
 #include <fcntl.h>
 #include <stdlib.h>
 #include <soxr.h>
-#include <soxr-lsr.h>
 
 #include "common.h"
 #include "player.h"
@@ -370,6 +369,7 @@ static int stuff_buffer(double playback_rate, short *inptr, short *outptr) {
     int i, samp;
     int stuff = 0;
     double p_stuff;
+    short * outptr_bu = outptr;
 
     p_stuff = 1.0 - pow(1.0 - fabs(playback_rate-1.0), frame_size);
 
@@ -384,39 +384,39 @@ static int stuff_buffer(double playback_rate, short *inptr, short *outptr) {
     };
     pthread_mutex_unlock(&vol_mutex);
     if (stuff) {
-    	float * src_in = malloc(sizeof(*src_in) * 2 * (frame_size)); /* Allocate input buffer. */
-    	float * src_out = malloc(sizeof(*src_out) * 2 * (frame_size + 2)); /* Allocate output buffer. */
+    	soxr_io_spec_t io_spec;
     	short * src_s_out = malloc(sizeof(*src_s_out) * 2 * (frame_size + 2)); /* Allocate output buffer. */
     	short * src_s_out_bu = src_s_out;
-    	outptr = outptr - 2 * frame_size;
-    	src_short_to_float_array (outptr , src_in, frame_size * 2);
+
+    	io_spec.itype = SOXR_INT16_I;
+    	io_spec.otype = SOXR_INT16_I;
+    	io_spec.flags = 0;
+    	io_spec.scale = 1.0;
+    	io_spec.e = 0;
 
     	size_t odone;
     	soxr_error_t error = soxr_oneshot(frame_size, frame_size + stuff, 2, /* Rates and # of chans. */
-    	src_in, frame_size, NULL, /* Input. */
-    	src_out, frame_size + stuff, &odone, /* Output. */
-    	NULL, NULL, NULL); /* Default configuration.*/
+    	outptr, frame_size, NULL, /* Input. */
+    	src_s_out, frame_size + stuff, &odone, /* Output. */
+    	&io_spec, /* I/O format */
+    	NULL, NULL); /* Default configuration.*/
     	if (error)
     		die("soxr error: %s\n", "error: %s\n", soxr_strerror(error));
 
+    	// assert we have the whole frame
     	if (odone > frame_size + 1)
     		die("odone = %d!\n", odone);
 
-    	src_float_to_short_array (src_out, src_s_out, 2 * (odone));
-    	debug(1,"odone %d\n", odone);
-    	free(src_in);
-    	free(src_out);
-
     	// keep last 7 samples
         if (stuff==1) {
-            debug(1, "+++++++++\n");
+            debug(3, "+++++++++\n");
             // shift samples right
             for (i=0; i < 7 * 2; i++){
             	samp = (frame_size * 2) - 1 - i;
                 outptr[samp + 2] = outptr[samp];
             }
         } else if (stuff==-1) {
-            debug(1, "---------\n");
+            debug(3, "---------\n");
             // shift samples left
             for (i=0; i < 7 * 2; i++){
             	samp = (frame_size * 2) - 7 * 2 + i;
@@ -432,10 +432,8 @@ static int stuff_buffer(double playback_rate, short *inptr, short *outptr) {
             *outptr++ = *src_s_out++;
             *outptr++ = *src_s_out++;
         }
-
         free(src_s_out_bu);
     }
-
     return frame_size + stuff;
 }
 
