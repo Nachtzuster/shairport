@@ -119,7 +119,6 @@ do_pkg_config PulseAudio    libpulse-simple CONFIG_PULSE
 do_pkg_config ALSA          alsa            CONFIG_ALSA
 do_pkg_config Avahi\ client avahi-client    CONFIG_AVAHI
 do_pkg_config libsoxr 		soxr
-do_pkg_config libsoxr-lsr		soxr-lsr
 
 if [ `uname` = 'OpenBSD' ]; then
     echo "OpenBSD machine, use sndio"
